@@ -7,9 +7,6 @@ import numpy as np
 import pandas as pd
 
 def prepare_data(df):
-    """
-    Adds dummies needed for the tables
-    """
     df['north_center'] = 1
     df.loc[df.south == 1, 'north_center'] = 2
     
