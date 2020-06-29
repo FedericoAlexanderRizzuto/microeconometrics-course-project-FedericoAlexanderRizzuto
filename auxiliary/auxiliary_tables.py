@@ -5,6 +5,12 @@ This module contains auxiliary functions for the creation of tables in the main 
 
 import numpy as np
 import pandas as pd
+import statsmodels as sm
+import statsmodels.formula.api as smf
+from linearmodels import IV2SLS
+
+from auxiliary.auxiliary_regressions import *
+from auxiliary.auxiliary_plots import *
 
 def prepare_data(df):
     df['north_center'] = 1
@@ -81,3 +87,41 @@ def create_table1c(df):
     table1c = format_table1(t1c_reg,nins_reg,t1c_it,nins_it)
     
     return table1c
+
+def create_table2and3(df,outcomes,panels):
+    df['clsize_ols'] = df['clsize_snv'] / 10
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    model = [smf.ols,IV2SLS.from_formula,IV2SLS.from_formula]
+    outcomes = df[outcomes]
+    output = []
+    columns= pd.MultiIndex.from_product([['OLS', 'IV/2SLS',' IV/2SLS'],
+                                         ['Italy', 'North/Center', 'South']])
+    table = pd.DataFrame()
+    for i, outcome in enumerate(outcomes):
+        clmn = 0
+        idx = pd.MultiIndex.from_product([[panels[i]],
+                                          ['Class size - coefficient', 
+                                           'Class size - standard errors', 'Enrollment',
+                                           'Enrollment squared','Interactions',
+                                           'Observations']])
+        newtable = pd.DataFrame(index=idx,columns=columns)
+        formula1 = outcome +'~ clsize_ols + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
+        formula2 = outcome +'~ [clsize_ols ~ clsize_hat] + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
+        formula3 = outcome +'~ [clsize_ols ~ clsize_hat] + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + C(survey) + C(grade) + enrol_ins_snv*region + students*C(segment) + students2*C(segment)'
+        formulas = [formula1,formula2,formula3]
+        for j, formula in enumerate(formulas):
+            for k, data in enumerate(datasets):
+                data = data[data[outcome].notna()]
+                cov_type = 'cluster'
+                cov_kwds = {'groups': data['clu']}
+                reg_res = summ_reg(data, model[j], formula, cov_type, cov_kwds)
+                this_column = newtable.columns[clmn]
+                newtable[this_column] = reg_res
+                clmn = clmn + 1
+        table = table.append(newtable,ignore_index=False)
+        
+    return table

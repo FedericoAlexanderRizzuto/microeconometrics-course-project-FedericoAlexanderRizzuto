@@ -10,6 +10,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(style="white", color_codes=True)
 
+from auxiliary.auxiliary_tables import *
+
 plt.style.use('seaborn')
 
 def prepare_data_fig2and3(df):
