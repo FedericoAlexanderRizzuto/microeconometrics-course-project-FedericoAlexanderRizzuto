@@ -13,12 +13,12 @@ from linearmodels import IV2SLS
 from auxiliary.auxiliary_plots import *
 from auxiliary.auxiliary_tables import *
 
-def summ_reg(data,model,formula,cov_type,cov_kwds):
+def summ_reg(df,model,formula,cov_type,cov_kwds):
     if model == smf.ols:
-        result = model(formula,data).fit(cov_type=cov_type, cov_kwds=cov_kwds)
+        result = model(formula,df).fit(cov_type=cov_type, cov_kwds=cov_kwds)
         se = "{:.3f}".format(result.bse['clsize_ols'])
     elif model == IV2SLS.from_formula:
-        result = model(formula,data).fit(cov_type='clustered',clusters=data.clu)
+        result = model(formula,df).fit(cov_type='clustered',clusters=df.clu)
         se = "{:.3f}".format(result.std_errors['clsize_ols'])
     else:
         print('Function only for smf.ols and IV2SLS.from_formula')

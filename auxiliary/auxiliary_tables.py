@@ -105,7 +105,7 @@ def create_table2and3(df,outcomes,panels):
         clmn = 0
         idx = pd.MultiIndex.from_product([[panels[i]],
                                           ['Class size - coefficient', 
-                                           'Class size - standard errors', 'Enrollment',
+                                           'Class size - standard error', 'Enrollment',
                                            'Enrollment squared','Interactions',
                                            'Observations']])
         newtable = pd.DataFrame(index=idx,columns=columns)
