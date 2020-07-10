@@ -97,7 +97,6 @@ def create_table2and3(df,outcomes,panels):
     datasets = [df, df_nc, df_s]
     model = [smf.ols,IV2SLS.from_formula,IV2SLS.from_formula]
     outcomes = df[outcomes]
-    output = []
     columns= pd.MultiIndex.from_product([['OLS', 'IV/2SLS',' IV/2SLS'],
                                          ['Italy', 'North/Center', 'South']])
     table = pd.DataFrame()
@@ -109,9 +108,9 @@ def create_table2and3(df,outcomes,panels):
                                            'Enrollment squared','Interactions',
                                            'Observations']])
         newtable = pd.DataFrame(index=idx,columns=columns)
-        formula1 = outcome +'~ clsize_ols + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
-        formula2 = outcome +'~ [clsize_ols ~ clsize_hat] + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
-        formula3 = outcome +'~ [clsize_ols ~ clsize_hat] + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + C(survey) + C(grade) + enrol_ins_snv*region + students*C(segment) + students2*C(segment)'
+        formula1 = outcome +'~ d + clsize_ols + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
+        formula2 = outcome +'~ [clsize_ols ~ clsize_hat] + d + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*region'
+        formula3 = outcome +'~ [clsize_ols ~ clsize_hat] + d + female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + C(survey) + C(grade) + enrol_ins_snv*region + students*C(segment) + students2*C(segment)'
         formulas = [formula1,formula2,formula3]
         for j, formula in enumerate(formulas):
             for k, data in enumerate(datasets):
@@ -125,3 +124,155 @@ def create_table2and3(df,outcomes,panels):
         table = table.append(newtable,ignore_index=False)
         
     return table
+
+def create_table5(df):
+    panels = ['Panel A. Math', 'Panel B. Language']
+    columns= pd.MultiIndex.from_product([['Score manipulation', 'Test scores'],
+                                          ['Italy', 'North/Center', 'South']])
+    subjects = ['math','ital']
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    table = pd.DataFrame()
+    for i, subject in enumerate(subjects):
+        outcomes = ['our_CHEAT_'+subject,'answers_'+subject+'_std']
+        col = 0
+        idx = pd.MultiIndex.from_product([[panels[i]],
+                                          ['Monitor at institution - coefficient', 
+                                            'Monitor at institution - standard error', 
+                                            'Dependent mean variable - coefficient',
+                                            'Dependent mean variable - standard deviation',
+                                            'Observations']])
+        newtable = pd.DataFrame()
+        newtable = pd.DataFrame(index=idx,columns=columns)
+        X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
+        POLY = ' students+ students2  + students*C(segment) + students2*C(segment) + '
+        FIXED = ' C(survey) + C(grade) + enrol_ins_snv*C(region) + C(d) + '
+        for j, outcome in enumerate(outcomes):
+            formula = outcome +' ~ '+X+POLY+FIXED+' C(o_math) '
+            for k, data in enumerate(datasets):
+                results_interest = []
+                data = data[data[outcome].notna()]
+                result = smf.ols(formula,data).fit(cov_type='cluster', cov_kwds={'groups': data['clu']})
+                results_interest.append("{:.3f}".format(result.params['C(o_math)[T.1]']) )
+                results_interest.append("{:.3f}".format(result.bse['C(o_math)[T.1]']) )
+                results_interest.append("{:.3f}".format(data[outcome].mean()))
+                results_interest.append("{:.3f}".format(data[outcome].std()))
+                results_interest.append("{:.0f}".format(result.nobs))
+                this_column = newtable.columns[col]
+                newtable[this_column] = results_interest
+                col = col+1
+        table = table.append(newtable,ignore_index=False)
+    
+    return table
+
+    
+def create_table6(df):
+    df['clsize_ols'] = df['clsize_snv']/10
+    df['clsize_monit_no'] = np.nan
+    df['clsize_monit_no'] = df['clsize_ols']*(1-df['o_math'])
+    df['clsize_monit'] = np.nan
+    df['clsize_monit'] = df['clsize_ols']*df['o_math']
+    df['clsize_hat_monitor'] = np.nan
+    df['clsize_hat_monitor'] = df['clsize_hat']*df['o_math']
+    columns= pd.MultiIndex.from_product([['Math', 'Language'],
+                                         ['Italy', 'North/Center', 'South']])
+    idx = [['Class size x Monitor - coefficient','Class size x Monitor - standard error',
+            'Class size x No monitor - coefficient','Class size x No monitor - standard error',
+            'Monitor - coefficient','Monitor - standard error','Observations']]
+    table = pd.DataFrame(index=idx,columns=columns)
+    outcomes = ['answers_math_std','answers_ital_std']
+    vars_interest = ['clsize_monit','clsize_monit_no','C(o_math)[T.1]']
+    col = 0
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    for i, outcome in enumerate(outcomes):
+        for j, data in enumerate(datasets):
+            results_interest = []
+            formula = outcome + '~ female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + students+ students2 + C(survey) + C(grade) + enrol_ins_snv*C(region) + C(o_math) + C(d) + students*C(segment) + students2*C(segment) + [clsize_monit + clsize_monit_no ~ clsize_hat + clsize_hat_monitor]' 
+            result = IV2SLS.from_formula(formula,data).fit(cov_type='clustered',clusters=data.clu)
+            for k, var_interest in enumerate(vars_interest):
+                results_interest.append("{:.3f}".format(result.params[vars_interest[k]]))
+                results_interest.append("{:.3f}".format(result.std_errors[vars_interest[k]]))
+            results_interest.append("{:.0f}".format(result.nobs))
+            this_column = table.columns[col]
+            table[this_column] = results_interest
+            col = col+1
+            
+    return table
+
+
+def create_table8(df):
+    outcomes = ['math','ital']
+    panels = ['Panel A. Math', 'Panel B. Language']
+    df['WEGOEXTRA'] = df['fuzzy2_d2'] - df['fuzzy2_d5']
+    df['clsize_ols'] = df['clsize_snv'] / 10
+    df['inter_instr'] = df['clsize_ols']*df['o_math']
+    for h, outcome in enumerate(outcomes):
+        df['inter_'+outcome] = df['clsize_ols']*df['our_CHEAT_'+outcome]
+    for l in range(2,6):
+        df['inter_instr_over'+str(l)] = df['o_math']*df['fuzzy2_d'+str(l)]
+    df['WEGOEXTRA_INTER'] = df['inter_instr_over2']-df['inter_instr_over5']
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    columns= pd.MultiIndex.from_product([['IV/2SLS', 'IV/2SLS (overidentified)',' IV/2SLS (overidentified-interacted)'],
+                                          ['Italy', 'North/Center', 'South']])
+    table = pd.DataFrame()
+    for i, outcome in enumerate(outcomes):
+        col = 0
+        idx = pd.MultiIndex.from_product([[panels[i]],
+                                          ['Class size - coefficient', 
+                                            'Class size - standard error', 
+                                            'Score manipulation - coefficient',
+                                            'Score manipulation - standard error',
+                                            'Class size x Score manipulation - coefficient',
+                                            'Class size x Score manipulation - standard error',
+                                            'Overid test p-value','Observations']])
+        newtable = pd.DataFrame(index=idx,columns=columns)
+        X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
+        POLY = ' students+ students2  + students*C(segment) + students2*C(segment) + '
+        FIXED = ' C(survey) + C(grade) + enrol_ins_snv*C(region) + C(d) + '
+        formula1 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' ~ clsize_hat + o_math]' 
+        formula2 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' ~ clsize_hat + o_math + WEGOEXTRA]' 
+        formula3 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' + inter_'+outcome+' ~ clsize_hat + o_math + inter_instr + WEGOEXTRA]' 
+        formulas = [formula1,formula2,formula3]
+        vars_interest = ['clsize_ols','our_CHEAT_'+outcome,'inter_'+outcome]
+        for j, formula in enumerate(formulas):
+            for k, data in enumerate(datasets):
+                results_interest = []
+                #data = data.dropna(subset=['answers_'+outcome+'_std'])
+                data = data[data['our_CHEAT_'+outcome].notna()]
+                result = IV2SLS.from_formula(formula,data).fit(cov_type='clustered',clusters=data.clu)
+                #if j == 2:
+                #    max_var_interest = 3
+                #elif:
+                    #max_var_interest = 2
+                for k in range(max(2,j+1)):
+                    results_interest.append("{:.3f}".format(result.params[vars_interest[k]]))
+                    results_interest.append("{:.3f}".format(result.std_errors[vars_interest[k]]))
+                if j == 0:
+                    results_interest.append('')
+                    results_interest.append('')
+                    results_interest.append('')
+                elif j == 1:
+                    results_interest.append('')
+                    results_interest.append('')
+                    results_interest.append("{:.3f}".format(sargan(result).pval))
+                else:
+                    results_interest.append("{:.3f}".format(sargan(result).pval))
+                results_interest.append("{:.0f}".format(result.nobs))
+                this_column = newtable.columns[col]
+                newtable[this_column] = results_interest
+                col = col+1
+        table = table.append(newtable,ignore_index=False)
+        
+    return table
+    

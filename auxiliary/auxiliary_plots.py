@@ -19,10 +19,21 @@ from auxiliary.auxiliary_regressions import *
 
 plt.style.use('seaborn')
 
+def plot_count_classes(df):
+    g = sns.catplot(x = 'survey', hue='grade',hue_order=[1,0],col='north_center',kind="count",data=df,palette='tab20c',legend=False)
+    axes = g.axes.flatten()
+    axes[0].set_title('North and Center')
+    axes[1].set_title('South')
+    g.set_axis_labels('Survey Year','Number of Classes')
+    g.add_legend(title='Grade')
+    new_labels = ['2', '5']
+    for t, l in zip(g._legend.texts, new_labels): t.set_text(l)
+    plt.show()
+
 def prepare_data_fig2and3(df):
-    grouped = df[['grade','enrol_sch_snv','d','clsize_snv','clsize_hat']]
-    grouped = grouped[grouped['enrol_sch_snv']<=150]
-    grouped = grouped.groupby(['grade','enrol_sch_snv','d'],as_index=False)[['clsize_snv','clsize_hat']].mean()
+    grouped = df[['grade','students','d','clsize_snv','clsize_hat']]
+    grouped = grouped[grouped['students']<=150]
+    grouped = grouped.groupby(['grade','students','d'],as_index=False)[['clsize_snv','clsize_hat']].mean()
     
     return grouped
 
@@ -31,13 +42,13 @@ def create_fig2(df):
     fig, (ax1,ax2) = plt.subplots(2,1,sharex='col', sharey=True,figsize=(8,8))
     plt.ylim(10,30)
     plt.xticks([0,25,50,75,100,125,150])
-    ax1.plot('enrol_sch_snv','clsize_snv',data=grouped[(grouped['grade']==1) & (grouped['d']=='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
-    ax1.plot('enrol_sch_snv','clsize_hat',data=grouped[(grouped['grade']==1) & (grouped['d']=='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
+    ax1.plot('students','clsize_snv',data=grouped[(grouped['grade']==1) & (grouped['d']=='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
+    ax1.plot('students','clsize_hat',data=grouped[(grouped['grade']==1) & (grouped['d']=='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
     ax1.set_title('Panel A. Grade 2')
     ax1.title.set_position([0.1, 1])
     ax1.set(ylabel='Class size')
-    ax2.plot('enrol_sch_snv','clsize_snv',data=grouped[(grouped['grade']==0) & (grouped['d']=='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
-    ax2.plot('enrol_sch_snv','clsize_hat',data=grouped[(grouped['grade']==0) & (grouped['d']=='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
+    ax2.plot('students','clsize_snv',data=grouped[(grouped['grade']==0) & (grouped['d']=='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
+    ax2.plot('students','clsize_hat',data=grouped[(grouped['grade']==0) & (grouped['d']=='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
     ax2.set_title('Panel B. Grade 5')
     ax2.title.set_position([0.1, 1])
     fig.text(0.5, 0.0, 'FIGURE 2. CLASS SIZE BY ENROLLMENT IN PRE-REFORM YEARS', ha='center', va='center')
@@ -61,8 +72,8 @@ def create_fig3(df):
     plt.ylabel('Class size')
     plt.ylim(10,30)
     plt.xticks([0,25,50,75,100,125,150])
-    plt.plot('enrol_sch_snv','clsize_snv',data=grouped[(grouped['grade']==1) & (grouped['d']!='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
-    plt.plot('enrol_sch_snv','clsize_hat',data=grouped[(grouped['grade']==1) & (grouped['d']!='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
+    plt.plot('students','clsize_snv',data=grouped[(grouped['grade']==1) & (grouped['d']!='All remaining grades/years')],linestyle='none',marker='o',alpha=0.6)
+    plt.plot('students','clsize_hat',data=grouped[(grouped['grade']==1) & (grouped['d']!='All remaining grades/years')],linestyle='-',marker='',color='firebrick')
     l = fig.legend(bbox_to_anchor=[-0.05,0,1,0.41])
     l.get_texts()[0].set_text('Actual classes')
     l.get_texts()[1].set_text('Maimonides\' Rule')
@@ -99,10 +110,10 @@ def create_fig4(df):
     df['dev'] = cutoffs_center(df)    
     subset = df[['clsize_snv', 'female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
             'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
-            'survey', 'region', 'north_center', 'grade','dev']]
+            'survey', 'region', 'north_center', 'grade','dev','d']]
     subset.dropna(how='any', inplace=True)
     subset['clsize_res'] = np.nan
-    formula = 'clsize_snv ~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region)'
+    formula = 'clsize_snv ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region)'
     result = smf.ols(formula,data=subset[(subset['grade']==0)]).fit()
     subset['clsize_res'] = result.resid
     result = smf.ols(formula,data=subset[(subset['grade']==1)]).fit()
@@ -128,7 +139,7 @@ def create_fig4(df):
     ax4.set(xlabel='Enrollment')
     fig.text(0.05,.98,'PANEL A. Grade 2')
     fig.text(0.05,.51,'PANEL B. Grade 5')
-    fig.text(0.5, 0.0, 'FIGURE 4. CLASS SIZE AND ENROLLMENT; CENTER AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
+    fig.text(0.5, 0.0, 'FIGURE 4. CLASS SIZE AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
     fig.tight_layout()
 
 
@@ -142,12 +153,12 @@ def create_fig5(df):
     subset.dropna(how='any', inplace=True)
     subset['ans_math_res'] = np.nan
     subset['ans_ital_res'] = np.nan
-    formula = 'answers_math_std ~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
+    formula = 'answers_math_std ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
     result_math = smf.ols(formula,data=subset).fit()
     subset['ans_math_res'] = result_math.resid
     subset_math = subset.groupby(['north_center','dev'],as_index=False)['ans_math_res'].mean()
     subset_math['MA'] = onesided_MAs(subset_math,'ans_math_res')
-    formula = 'answers_ital_std ~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
+    formula = 'answers_ital_std ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
     subset['ans_ital_res'] = smf.ols(formula,data=subset).fit().resid
     subset_ital = subset.groupby(['north_center','dev'],as_index=False)['ans_ital_res'].mean()
     subset_ital['MA'] = onesided_MAs(subset_ital,'ans_ital_res')
@@ -171,7 +182,7 @@ def create_fig5(df):
     ax4.set(xlabel='Enrollment')
     fig.text(0.05,.98,'PANEL A. Math score')
     fig.text(0.05,.51,'PANEL B. Language score')
-    fig.text(0.5, 0.0, 'FIGURE 5. TEST SCORES AND ENROLLMENT; CENTER AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
+    fig.text(0.5, 0.0, 'FIGURE 5. TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
     fig.tight_layout()
 
 
@@ -213,8 +224,7 @@ def create_fig6(df):
     ax4.set(xlabel='Enrollment')
     fig.text(0.05,.98,'PANEL A. Math score manipulation')
     fig.text(0.05,.51,'PANEL B. Language score manipulation')
-    fig.text(0.5, 0.0, 'FIGURE 6. SCORE MANIPULATION AND ENROLLMENT; CENTER AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
+    fig.text(0.5, 0.0, 'FIGURE 6. SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
     fig.tight_layout()
-
 
     return 
