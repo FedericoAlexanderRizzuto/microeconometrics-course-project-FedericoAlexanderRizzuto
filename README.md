@@ -6,6 +6,22 @@ This is a template for course projects. We use [GitHub Classroom](https://classr
 
 Please ensure that a brief description of your project is included in the [README.md](https://github.com/HumanCapitalAnalysis/template-course-project/blob/master/README.md), which provides a proper citation of your baseline article. Also, please set up the following badges that allow to easily access your project notebook.
 
+https://github.com/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.ipynb
+
+<a href="https://nbviewer.jupyter.org/github/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.ipynb"
+   target="_parent">
+   <img align="center"
+  src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png"
+      width="109" height="20">
+</a>
+<a href="https://mybinder.org/v2/gh/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.ipynb"
+    target="_parent">
+    <img align="center"
+       src="https://mybinder.org/badge_logo.svg"
+       width="109" height="20">
+
+
+
 <a href="https://nbviewer.jupyter.org/github/HumanCapitalAnalysis/template-course-project/blob/master/example_project.ipynb"
    target="_parent">
    <img align="center"
