@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 23 23:35:07 2020
-
-@author: FedericoAlexander
+Date: July 17, 2020
+Author: Federico Alexander Rizzuto
+Content: Code producing tables needed to replicate Angrist et al. (2017) for the 
+Microeconometrics project
 """
-
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(style="white", color_codes=True)
-import statsmodels as sm
 import statsmodels.formula.api as smf
-from linearmodels import IV2SLS
 
 from auxiliary.auxiliary_tables import *
 from auxiliary.auxiliary_regressions import *
@@ -24,7 +22,7 @@ def plot_count_classes(df):
     axes = g.axes.flatten()
     axes[0].set_title('North and Center')
     axes[1].set_title('South')
-    g.set_axis_labels('Survey Year','Number of Classes')
+    g.set_axis_labels('Survey Year','Number of classes')
     g.add_legend(title='Grade')
     new_labels = ['2', '5']
     for t, l in zip(g._legend.texts, new_labels): t.set_text(l)
@@ -94,9 +92,10 @@ def cutoffs_center(df):
             
     return df['dev']
 
+    
 def onesided_MAs(grouped_data,variable):
     grouped_data['MA'] = np.nan
-    intervals = [[-12,0],[1,12]]
+    intervals = [[-12,-2],[2,12]]
     for i in range(1,3):
         for j, interval in enumerate(intervals):
             grouped_data['temp'] = np.nan
@@ -106,125 +105,159 @@ def onesided_MAs(grouped_data,variable):
             
     return grouped_data['MA']
 
+
 def create_fig4(df):
-    df['dev'] = cutoffs_center(df)    
-    subset = df[['clsize_snv', 'female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
-            'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
-            'survey', 'region', 'north_center', 'grade','dev','d']]
-    subset.dropna(how='any', inplace=True)
-    subset['clsize_res'] = np.nan
-    formula = 'clsize_snv ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region)'
-    result = smf.ols(formula,data=subset[(subset['grade']==0)]).fit()
-    subset['clsize_res'] = result.resid
-    result = smf.ols(formula,data=subset[(subset['grade']==1)]).fit()
-    subset['clsize_res'].update(result.resid)
-    subset = subset.groupby(['grade','north_center','dev'],as_index=False)['clsize_res'].mean()
-    subset['MA'] = onesided_MAs(subset,'clsize_res')
-    fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2,sharex='col', sharey=True,figsize=(10,10))
-    plt.yticks([-5,-3,-1,1,3,5])
-    ax1.axvline(color='r')
-    ax2.axvline(color='r')
-    ax3.axvline(color='r')
-    ax4.axvline(color='r')
-    plt.ylim(-5.5,5.5)
-    ax1.plot('dev','MA',data=subset[(subset['north_center']==1) & (subset['grade']==1)],linestyle='none',marker='o',color='c' )
-    ax1.set_title('North and Center')
-    ax2.plot('dev','MA',data=subset[(subset['north_center']==2) & (subset['grade']==1)],linestyle='none',marker='o',color='c' )
-    ax2.set_title('South')
-    ax3.plot('dev','MA',data=subset[(subset['north_center']==1) & (subset['grade']==0)],linestyle='none',marker='o',color='c' )
-    ax3.set_title('North and Center')
-    ax3.set(xlabel='Enrollment')
-    ax4.plot('dev','MA',data=subset[(subset['north_center']==2) & (subset['grade']==0)],linestyle='none',marker='o',color='c' )
-    ax4.set_title('South')
-    ax4.set(xlabel='Enrollment')
-    fig.text(0.05,.98,'PANEL A. Grade 2')
-    fig.text(0.05,.51,'PANEL B. Grade 5')
-    fig.text(0.5, 0.0, 'FIGURE 4. CLASS SIZE AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
-    fig.tight_layout()
-
-
-    return 
-
-def create_fig5(df):
-    df['dev'] = cutoffs_center(df)    
-    subset = df[['clsize_snv', 'female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
-            'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
-            'survey', 'region', 'north_center', 'grade','dev','answers_math_std','answers_ital_std','d']]
-    subset.dropna(how='any', inplace=True)
-    subset['ans_math_res'] = np.nan
-    subset['ans_ital_res'] = np.nan
-    formula = 'answers_math_std ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
-    result_math = smf.ols(formula,data=subset).fit()
-    subset['ans_math_res'] = result_math.resid
-    subset_math = subset.groupby(['north_center','dev'],as_index=False)['ans_math_res'].mean()
-    subset_math['MA'] = onesided_MAs(subset_math,'ans_math_res')
-    formula = 'answers_ital_std ~ d + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
-    subset['ans_ital_res'] = smf.ols(formula,data=subset).fit().resid
-    subset_ital = subset.groupby(['north_center','dev'],as_index=False)['ans_ital_res'].mean()
-    subset_ital['MA'] = onesided_MAs(subset_ital,'ans_ital_res')
-    fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2,sharex='col', sharey=True,figsize=(10,10))
-    #plt.yticks([-5,-3,-1,1,3,5])
-    plt.yticks([-0.10,-0.08,-0.06,-0.04,-0.02,0,0.02,0.04,0.06,0.08,0.10])
-    ax1.axvline(color='r')
-    ax2.axvline(color='r')
-    ax3.axvline(color='r')
-    ax4.axvline(color='r')
-    plt.ylim(-0.1,0.1)
-    ax1.plot('dev','MA',data=subset_math[(subset_math['north_center']==1)],linestyle='none',marker='o',color='c' )
-    ax1.set_title('North and Center')
-    ax2.plot('dev','MA',data=subset_math[(subset_math['north_center']==2)],linestyle='none',marker='o',color='c' )
-    ax2.set_title('South')
-    ax3.plot('dev','MA',data=subset_ital[(subset_ital['north_center']==1)],linestyle='none',marker='o',color='c' )
-    ax3.set_title('North and Center')
-    ax3.set(xlabel='Enrollment')
-    ax4.plot('dev','MA',data=subset_ital[(subset_ital['north_center']==2)],linestyle='none',marker='o',color='c' )
-    ax4.set_title('South')
-    ax4.set(xlabel='Enrollment')
-    fig.text(0.05,.98,'PANEL A. Math score')
-    fig.text(0.05,.51,'PANEL B. Language score')
-    fig.text(0.5, 0.0, 'FIGURE 5. TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
-    fig.tight_layout()
-
-
-    return 
+    figtitle = 'FIGURE 4. CLASS SIZE AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-5,-3,-1,1,3,5]
+    RDgraph(df, 'clsize_snv', figtitle, yticks)
     
-def create_fig6(df):
-    df['dev'] = cutoffs_center(df)    
-    subset = df[['clsize_snv', 'female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
-            'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
-            'survey', 'region', 'north_center', 'grade','dev','our_CHEAT_math','our_CHEAT_ital','d']]
-    subset.dropna(how='any', inplace=True)
-    subset['cheat_math_res'] = np.nan
-    subset['cheat_ital_res'] = np.nan
-    formula = 'our_CHEAT_math ~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
-    result_math = smf.ols(formula,data=subset).fit()
-    subset['cheat_math_res'] = result_math.resid
-    subset_math = subset.groupby(['north_center','dev'],as_index=False)['cheat_math_res'].mean()
-    subset_math['MA'] = onesided_MAs(subset_math,'cheat_math_res')
-    formula = 'our_CHEAT_ital ~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
-    subset['cheat_ital_res'] = smf.ols(formula,data=subset).fit().resid
-    subset_ital = subset.groupby(['north_center','dev'],as_index=False)['cheat_ital_res'].mean()
-    subset_ital['MA'] = onesided_MAs(subset_ital,'cheat_ital_res')
-    fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2,sharex='col', sharey=True,figsize=(10,10))
-    plt.yticks([-0.04,-0.02,0,0.02,0.04])
-    ax1.axvline(color='r')
-    ax2.axvline(color='r')
-    ax3.axvline(color='r')
-    ax4.axvline(color='r')
-    plt.ylim(-0.04,0.04)
-    ax1.plot('dev','MA',data=subset_math[(subset_math['north_center']==1)],linestyle='none',marker='o',color='c' )
-    ax1.set_title('North and Center')
-    ax2.plot('dev','MA',data=subset_math[(subset_math['north_center']==2)],linestyle='none',marker='o',color='c' )
-    ax2.set_title('South')
-    ax3.plot('dev','MA',data=subset_ital[(subset_ital['north_center']==1)],linestyle='none',marker='o',color='c' )
-    ax3.set_title('North and Center')
-    ax3.set(xlabel='Enrollment')
-    ax4.plot('dev','MA',data=subset_ital[(subset_ital['north_center']==2)],linestyle='none',marker='o',color='c' )
-    ax4.set_title('South')
-    ax4.set(xlabel='Enrollment')
-    fig.text(0.05,.98,'PANEL A. Math score manipulation')
-    fig.text(0.05,.51,'PANEL B. Language score manipulation')
-    fig.text(0.5, 0.0, 'FIGURE 6. SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS', ha='center', va='center')
-    fig.tight_layout()
+    return
 
-    return 
+def create_fig5a(df):
+    figtitle = 'FIGURE 5a. MATH TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'answers_math_std', figtitle, yticks)
+    
+    return
+
+def create_fig5b(df):
+    figtitle = 'FIGURE 5b. LANGUAGE TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'answers_ital_std', figtitle, yticks)
+    
+    return
+
+def create_fig6a(df):
+    figtitle = 'FIGURE 6a. MATH SCORES MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'our_CHEAT_math', figtitle, yticks)
+    
+    return
+
+def create_fig6b(df):
+    figtitle = 'FIGURE 6b. LANGUAGE SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'our_CHEAT_ital', figtitle, yticks)
+    
+    return
+
+def RDgraph(df,outcome,figtitle,yticks):
+    df['dev'] = cutoffs_center(df)
+    subset = pd.DataFrame()
+    subset = df[['female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
+            'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
+            'survey', 'region', 'north_center', 'grade','dev','d',outcome]]
+    subset = subset[subset[outcome].notna()]
+    formula = outcome + '~ C(d) + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
+    subset['res'] = smf.ols(formula,data=subset).fit().resid
+    subset = subset.groupby(['grade','north_center','dev'],as_index=False)['res'].mean()
+    subset['MA'] = onesided_MAs(subset,'res')
+    Rows = 2
+    Cols = 2
+    Tot = Rows*Cols
+    Position = range(1,Tot + 1)
+    fig = plt.figure(1)
+    areas = [1,2,1,2]
+    grades = [1,1,0,0]
+    ttls = ['North/Center (Grade 2)','South (Grade 2)','North/Center (Grade 5)','South (Grade 5)']
+    xlab = ['','','Enrollment','Enrollment']
+    ylab = ['Raw and Smoothed Residuals','','Raw and Smoothed Residuals','']
+    for i in range(Tot):
+        g = fig.add_subplot(Rows,Cols,Position[i])
+        g.axvline(color='r')
+        g.plot('dev','MA',data=subset[(subset['north_center']==areas[i]) & (subset['grade']==grades[i]) & (subset['dev'] < -2)],linestyle='-',marker=None,color='b' )
+        g.plot('dev','MA',data=subset[(subset['north_center']==areas[i]) & (subset['grade']==grades[i]) & (subset['dev'] > 2 )],linestyle='-',marker=None,color='b' )
+        g.plot('dev','res',data=subset[(subset['north_center']==areas[i]) & (subset['grade']==grades[i])],linestyle='none',marker='o',color='c' )
+        g.set_title(ttls[i])
+        g.set_ylabel(ylab[i])
+        g.set_xlabel(xlab[i])
+        plt.yticks(yticks)
+    fig.set_size_inches(9,9)
+    fig.text(0, 0, figtitle)
+    fig.tight_layout() 
+    plt.show()
+    
+    return
+
+
+
+def plot_monitor_demodata(df):
+    subject = ['dad_midedu','mom_employed','immigrants_broad']
+    subject_ylabel = ['Pct students with father HS graduate',
+                      'Pct students with mother employed','Pct immigrant students']
+    monitor = ['o_math','o_math','o_math']
+    monitor_legend = ['Monitor at institution','Monitor at institution',
+                      'Monitor at institution']
+    ttls = ['Effect of monitors at the institution on demographic data in Grade 2',
+            'Effect of monitors at the institution on demographic data in Grade 5']
+    grades_order = [1,0]
+    for i in range(2):
+        Tot = 3
+        Rows = 1
+        Cols = 3
+        Position = range(1,Tot + 1)
+        fig = plt.figure(1)
+        for k in range(Tot):
+            g = fig.add_subplot(Rows,Cols,Position[k])
+            sns.violinplot(x='north_center', y=subject[k], hue=monitor[k],split=True, 
+                           cut=0, inner='quart',palette={0: 'y', 1: 'b'},
+                           data=df.loc[df.grade==grades_order[i]])
+            g.legend(title= monitor_legend[k],loc='upper center')
+            sns.despine(left=True)
+            g.set_xticklabels(['North and Center','South'])
+            g.set_ylabel(subject_ylabel[k])
+            g.set_xlabel('')
+        fig.set_size_inches(14,8)
+        fig.suptitle(ttls[i])
+        plt.show()
+        
+    return
+
+def plot_monitor_testscores(df):
+    subject = ['answers_math_pct','answers_math_pct','answers_ital_pct',
+               'answers_ital_pct']
+    subject_ylabel = ['Pct correct answers in math','Pct correct answers in math',
+                      'Pct correct answers in Italian','Pct correct answers in Italian']
+    monitor = ['sampled_math','o_math','sampled_ital','o_math']
+    monitor_legend = ['Class monitored in math','Monitor at institution',
+                      'Class monitored in Italian','Monitor at institution']
+    figtitle = ['Effect of monitors in class and at the institution on Grade 2 test scores',
+            'Effect of monitors in class and at the institution on Grade 5 test scores']
+    grades_order = [1,0]
+    for i in range(2):
+        Tot = 4
+        Rows = 2
+        Cols = 2
+        Position = range(1,Tot + 1)
+        fig = plt.figure(1)
+        for k in range(Tot):
+            g = fig.add_subplot(Rows,Cols,Position[k])
+            sns.violinplot(x='north_center', y=subject[k], hue=monitor[k],split=True, 
+                           inner='quart',palette={0: 'y', 1: 'b'},cut=0,
+                           data=df.loc[df.grade==grades_order[i]])
+            g.legend(title= monitor_legend[k],loc='upper center')
+            sns.despine(left=True)
+            g.set_xticklabels(['North and Center','South'])
+            g.set_ylabel(subject_ylabel[k])
+            g.set_xlabel('')
+        fig.set_size_inches(14,8)
+        fig.suptitle(figtitle[i])
+        plt.show()
+        
+    return
+
+def plot_score_dist(df):
+    test_score = ['answers_math_pct','answers_ital_pct']
+    ttls = ['Test scores in Math','Test scores in Italian language']
+    for i in range(2):
+        g = sns.FacetGrid(df,hue='area',col='grade',col_order=[1,0],margin_titles=True)
+        g.map(sns.distplot,test_score[i]).fig.set_size_inches(10,6)
+        axes = g.axes.flatten()
+        axes[0].set_title('Grade 2')
+        axes[1].set_title('Grade 5')
+        g.set_axis_labels('Pct correct answers','Frequency')
+        g.add_legend(title='Area')
+        plt.suptitle(ttls[i])
+    plt.show()
+    
+    return

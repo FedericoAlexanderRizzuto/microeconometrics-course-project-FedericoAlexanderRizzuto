@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-This module contains auxiliary functions for the creation of tables in the main notebook.
+Date: July 17, 2020
+Author: Federico Alexander Rizzuto
+Content: Code producing tables needed to replicate Angrist et al. (2017) for the 
+Microeconometrics project
 """
 
 import numpy as np
 import pandas as pd
-import statsmodels as sm
+#import statsmodels as sm
 import statsmodels.formula.api as smf
 from linearmodels import IV2SLS
 
@@ -123,6 +126,27 @@ def create_table2and3(df,outcomes,panels):
                 clmn = clmn + 1
         table = table.append(newtable,ignore_index=False)
         
+    return table
+
+def create_table4a(df):
+    df['placeholder'] = 0
+    table = pd.DataFrame()
+    vars_stats = {'clsize_snv':['mean', 'std'],'enrol_sch_snv':['mean', 'std'],'ratio_clsize':['mean', 'std'],
+                          'ratio_sch_enrol' :['mean', 'std'],'ratio_ins_enrol':['mean', 'std'],'female':['mean', 'std'],'immigrants_broad':['mean', 'std'],
+                          'dad_midedu':['mean', 'std'],'mom_employed':['mean', 'std'],'m_dad_edu':['mean', 'std'],'m_mom_occ':['mean', 'std'],'m_origin':['mean', 'std'],'classid': ['count']}
+    table = df.groupby(['placeholder','o_math']).agg(vars_stats).round(2)
+    table = table.append(df.groupby(['north_center','o_math']).agg(vars_stats).round(2),ignore_index=False,sort=False)
+    tablebo = df.groupby(['placeholder','o_math'])[['classid']].count()
+    table = table.transpose()
+    #cols = pd.MultiIndex.from_product([['Italy', 'North/Center','South'],
+    #                                      ['No Monitor', 'Monitor']])
+    table.columns.set_levels([['Italy', 'North/Center','South'],['No Monitor', 'Monitor']],inplace=True)
+    table.rename(index={'clsize_snv':'Class size','enrol_sch_snv':'Grade enrollment at school','ratio_clsize':'Percent in class sitting the test',
+                          'ratio_sch_enrol':'Percent in school sitting the test','ratio_ins_enrol':'Percent in institution sitting the test',
+                          'female':'Female students','immigrants_broad':'Immigrant students','dad_midedu':'Father HS',
+                  'mom_employed':'Mother employed','m_dad_edu':'Missing data on father\'s education',
+                  'm_mom_occ':'Missing data on mother\'s occupation','m_origin':'Missing data on country of origin','classid':'Observations'},inplace=True)
+    
     return table
 
 def create_table5(df):
@@ -265,9 +289,9 @@ def create_table8(df):
                 elif j == 1:
                     results_interest.append('')
                     results_interest.append('')
-                    results_interest.append("{:.3f}".format(sargan(result).pval))
+                    results_interest.append("{:.3f}".format(result.sargan.pval))
                 else:
-                    results_interest.append("{:.3f}".format(sargan(result).pval))
+                    results_interest.append("{:.3f}".format(result.sargan.pval))
                 results_interest.append("{:.0f}".format(result.nobs))
                 this_column = newtable.columns[col]
                 newtable[this_column] = results_interest
