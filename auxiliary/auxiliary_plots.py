@@ -18,15 +18,52 @@ from auxiliary.auxiliary_regressions import *
 plt.style.use('seaborn')
 
 def plot_count_classes(df):
-    g = sns.catplot(x = 'survey', hue='grade',hue_order=[1,0],col='north_center',kind="count",data=df,palette='tab20c',legend=False)
+    g = sns.catplot(x = 'survey', hue='grade',hue_order=[1,0],col='area',kind="count",data=df,palette='tab20c',legend=False)
     axes = g.axes.flatten()
-    axes[0].set_title('North and Center')
-    axes[1].set_title('South')
+    axes[0].set_title('North')
+    axes[1].set_title('Center')
+    axes[2].set_title('South')
     g.set_axis_labels('Survey Year','Number of classes')
     g.add_legend(title='Grade')
     new_labels = ['2', '5']
     for t, l in zip(g._legend.texts, new_labels): t.set_text(l)
     plt.show()
+   
+def plot_dist(df,var2plot,figtitle,xlim,ylim,xlabel):
+    for i in range(len(var2plot)):
+        g = sns.FacetGrid(df,hue='area',col='grade',col_order=[1,0],margin_titles=True)
+        g.map(sns.distplot,var2plot[i]).fig.set_size_inches(10,6)
+        axes = g.axes.flatten()
+        axes[0].set_title('Grade 2')
+        axes[1].set_title('Grade 5')
+        g.set_axis_labels(xlabel,'Frequency')
+        g.add_legend(title='Area')
+        plt.suptitle(figtitle[i])
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+    plt.show()
+    
+    return
+
+def plot_score_dist(df):
+    var2plot = ['answers_math_pct','answers_ital_pct']
+    figtitle = ['Test scores in math','Test scores in Italian language']
+    xlim = [0,100]
+    ylim = [0,0.06]
+    xlabel = 'Pct correct answers'
+    plot_dist(df, var2plot, figtitle, xlim, ylim, xlabel)
+    
+    return
+    
+def plot_demo_dist(df,xlim,ylim):
+    var2plot = ['immigrants_broad','dad_midedu','mom_employed']
+    figtitle = ['Immigrant students','Father HS graduate','Mother employed']
+    #xlim = [0.1,1]
+    #ylim = [0,6]
+    xlabel = 'Pct student'
+    plot_dist(df, var2plot, figtitle, xlim, ylim, xlabel)
+    
+    return
 
 def prepare_data_fig2and3(df):
     grouped = df[['grade','students','d','clsize_snv','clsize_hat']]
@@ -244,20 +281,4 @@ def plot_monitor_testscores(df):
         fig.suptitle(figtitle[i])
         plt.show()
         
-    return
-
-def plot_score_dist(df):
-    test_score = ['answers_math_pct','answers_ital_pct']
-    ttls = ['Test scores in Math','Test scores in Italian language']
-    for i in range(2):
-        g = sns.FacetGrid(df,hue='area',col='grade',col_order=[1,0],margin_titles=True)
-        g.map(sns.distplot,test_score[i]).fig.set_size_inches(10,6)
-        axes = g.axes.flatten()
-        axes[0].set_title('Grade 2')
-        axes[1].set_title('Grade 5')
-        g.set_axis_labels('Pct correct answers','Frequency')
-        g.add_legend(title='Area')
-        plt.suptitle(ttls[i])
-    plt.show()
-    
     return
