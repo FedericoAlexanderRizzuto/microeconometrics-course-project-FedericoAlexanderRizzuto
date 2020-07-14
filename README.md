@@ -18,6 +18,17 @@ Please ensure that a brief description of your project is included in the [READM
        src="https://mybinder.org/badge_logo.svg"
        width="109" height="20">
 
+<a href="https://nbviewer.jupyter.org/github/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.nbconvert.ipynb"
+   target="_parent">
+   <img align="center"
+  src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png"
+      width="109" height="20">
+</a>
+<a href="https://mybinder.org/v2/gh/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.nbconvert.ipynb"
+    target="_parent">
+    <img align="center"
+       src="https://mybinder.org/badge_logo.svg"
+       width="109" height="20">
 
 ## Reproducibility
 
