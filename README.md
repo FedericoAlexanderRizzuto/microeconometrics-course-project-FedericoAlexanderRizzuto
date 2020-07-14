@@ -11,8 +11,7 @@
     <img align="center"
        src="https://mybinder.org/badge_logo.svg"
        width="109" height="20">
-
-<br />
+</a>
 
 The current repository contains my replication of [Joshua D. Angrist, Erich Battistin, and Daniela Vuri (2017)](https://www.aeaweb.org/articles?id=10.1257/app.20160267).
 
@@ -34,7 +33,4 @@ The folders *auxiliary*, *data*, *files* respectively contain auxiliary code (wr
 * Eisenhauer, P. (2019). Course project template, HumanCapitalAnalysis, https://github.com/HumanCapitalAnalysis/template-course-project.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/HumanCapitalAnalysis/template-course-project/blob/master/LICENSE)
-
-</a>
-
 [![Build Status](https://travis-ci.org/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto.svg?branch=master)](https://travis-ci.org/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto)
