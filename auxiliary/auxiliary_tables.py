@@ -230,6 +230,45 @@ def create_table6(df):
             
     return table
 
+def create_table7(df):
+    panels = ['Panel A. Score manipulation', 'Panel B. Class size']
+    end_vars = [['our_CHEAT_math','our_CHEAT_ital'],['clsize_ols']]
+    df['clsize_ols'] = df['clsize_snv'] / 10
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    table = pd.DataFrame()
+    for i, panel in enumerate(panels):
+        outcomes = end_vars[i]
+        col = 0
+        columns= pd.MultiIndex.from_product([['Math', 'Language'],['Italy', 'North/Center', 'South']])
+        idx = []
+        idx = pd.MultiIndex.from_product([[panels[i]],
+                                          ['Maimonides\' Rule - coefficient','Maimonides\' Rule - standard error','Monitor at institution - coefficient','Monitor at institution - standard error','Observations']])
+        newtable = pd.DataFrame()
+        newtable = pd.DataFrame(index=idx,columns=columns)
+        X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
+        POLY = ' students+ students2  + students*C(segment) + students2*C(segment) + '
+        FIXED = ' C(survey) + C(grade) + enrol_ins_snv*C(region) + C(d) + '
+        for j, outcome in enumerate(outcomes):
+            formula = outcome +' ~ '+X+POLY+FIXED+' C(o_math) + clsize_hat '
+            for k, data in enumerate(datasets):
+                results_interest = []
+                data = data[data[outcome].notna()]
+                result = smf.ols(formula,data).fit(cov_type='cluster', cov_kwds={'groups': data['clu']})
+                results_interest.append("{:.4f}".format(result.params['clsize_hat']) )
+                results_interest.append("{:.4f}".format(result.bse['clsize_hat']) )
+                results_interest.append("{:.4f}".format(result.params['C(o_math)[T.1]']))
+                results_interest.append("{:.4f}".format(result.bse['C(o_math)[T.1]']))
+                results_interest.append("{:.0f}".format(result.nobs))
+                this_column = newtable.columns[col]
+                newtable[this_column] = results_interest
+                col = col+1
+        table = table.append(newtable,ignore_index=False)
+    
+    return table
 
 def create_table8(df):
     outcomes = ['math','ital']
@@ -272,13 +311,8 @@ def create_table8(df):
         for j, formula in enumerate(formulas):
             for k, data in enumerate(datasets):
                 results_interest = []
-                #data = data.dropna(subset=['answers_'+outcome+'_std'])
                 data = data[data['our_CHEAT_'+outcome].notna()]
                 result = IV2SLS.from_formula(formula,data).fit(cov_type='clustered',clusters=data.clu)
-                #if j == 2:
-                #    max_var_interest = 3
-                #elif:
-                    #max_var_interest = 2
                 for k in range(max(2,j+1)):
                     results_interest.append("{:.3f}".format(result.params[vars_interest[k]]))
                     results_interest.append("{:.3f}".format(result.std_errors[vars_interest[k]]))
