@@ -185,7 +185,7 @@ def RDgraph(df,outcome,figtitle,yticks):
             'dad_midedu', 'dad_highedu', 'mom_unemp', 'mom_housew', 'mom_employed', 'm_mom_edu', 
             'survey', 'region', 'north_center', 'grade','dev','d',outcome]]
     subset = subset[subset[outcome].notna()]
-    formula = outcome + '~ C(d) + female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + d + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade)'
+    formula = outcome + '~ female + m_female + immigrants_broad + m_origin + dad_lowedu + dad_midedu + dad_highedu + mom_unemp + mom_housew + mom_employed + m_mom_edu + C(survey) + C(region) + C(grade) + C(d)'
     subset['res'] = smf.ols(formula,data=subset).fit().resid
     subset = subset.groupby(['grade','north_center','dev'],as_index=False)['res'].mean()
     subset['MA'] = onesided_MAs(subset,'res')
