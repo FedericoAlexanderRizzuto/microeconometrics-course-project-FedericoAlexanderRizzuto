@@ -107,7 +107,7 @@ def create_table2and3(df,outcomes,panels):
         clmn = 0
         idx = pd.MultiIndex.from_product([[panels[i]],
                                           ['Class size - coefficient', 
-                                           'Class size - standard error', 'Enrollment',
+                                           'Class size - SE', 'Enrollment',
                                            'Enrollment squared','Interactions',
                                            'Observations']])
         newtable = pd.DataFrame(index=idx,columns=columns)
@@ -138,14 +138,53 @@ def create_table4a(df):
     table = table.append(df.groupby(['north_center','o_math']).agg(vars_stats).round(2),ignore_index=False,sort=False)
     tablebo = df.groupby(['placeholder','o_math'])[['classid']].count()
     table = table.transpose()
-    #cols = pd.MultiIndex.from_product([['Italy', 'North/Center','South'],
-    #                                      ['No Monitor', 'Monitor']])
     table.columns.set_levels([['Italy', 'North/Center','South'],['No Monitor', 'Monitor']],inplace=True)
     table.rename(index={'clsize_snv':'Class size','enrol_sch_snv':'Grade enrollment at school','ratio_clsize':'Percent in class sitting the test',
                           'ratio_sch_enrol':'Percent in school sitting the test','ratio_ins_enrol':'Percent in institution sitting the test',
                           'female':'Female students','immigrants_broad':'Immigrant students','dad_midedu':'Father HS',
                   'mom_employed':'Mother employed','m_dad_edu':'Missing data on father\'s education',
                   'm_mom_occ':'Missing data on mother\'s occupation','m_origin':'Missing data on country of origin','classid':'Observations'},inplace=True)
+    
+    return table
+
+def tables_balance(df,outcomes,idx,CONTROLS,var_interest):
+    df['clsize_ols'] = df['clsize_snv']/10
+    df_nc = df.loc[df.north_center == 1]
+    df_nc.region = df_nc.region.cat.remove_unused_categories()
+    df_s = df.loc[df.north_center == 2]
+    df_s.region = df_s.region.cat.remove_unused_categories()
+    datasets = [df, df_nc, df_s]
+    columns = [['Italy', 'North/Center','South']]
+    table = pd.DataFrame(index=idx,columns=columns)
+    for i, data in enumerate(datasets):
+        results_interest = []
+        for j, outcome in enumerate(outcomes):
+            formula = outcome +' ~ '+CONTROLS+var_interest
+            result = smf.ols(formula,data).fit(cov_type='cluster', cov_kwds={'groups': data['clu']})
+            results_interest.append("{:.4f}".format(result.params[var_interest]))
+            results_interest.append("{:.4f}".format(result.bse[var_interest]))
+        this_column = table.columns[i]
+        table[this_column] = results_interest
+    
+    return table
+
+def create_table4b(df):
+    idx = [['Class size - coefficient','Class size - SE','Grade enrollment at school - coefficient','Grade enrollment at school - SE',
+            'Percent in class sitting the test - coefficient','Percent in class sitting the test - SE',
+            'Percent in school sitting the test - coefficient','Percent in school sitting the test - SE',
+            'Percent in institution sitting the test - coefficient','Percent in institution sitting the test - SE',
+            'Female students - coefficient','Female students - SE',
+            'Immigrant students - coefficient','Immigrant students - SE',
+            'Father HS - coefficient','Father HS - SE',
+            'Mother employed - coefficient','Mother employed - SE',
+            'Missing data on father\'s education - coefficient','Missing data on father\'s education - SE',
+            'Missing data on mother\'s occupation - coefficient','Missing data on mother\'s occupation - SE',
+            'Missing data on country of origin - coefficient','Missing data on country of origin - SE']]
+    outcomes = ['clsize_ols','enrol_sch_snv','ratio_clsize','ratio_sch_enrol','ratio_ins_enrol','female',
+                'immigrants_broad','dad_midedu','mom_employed','m_dad_edu','m_mom_occ','m_origin']
+    CONTROLS = 'C(grade) + C(survey) + enrol_ins_snv*C(region) +'
+    var_interest = 'o_math'
+    table = tables_balance(df,outcomes,idx,CONTROLS,var_interest)
     
     return table
 
@@ -165,9 +204,9 @@ def create_table5(df):
         col = 0
         idx = pd.MultiIndex.from_product([[panels[i]],
                                           ['Monitor at institution - coefficient', 
-                                            'Monitor at institution - standard error', 
+                                            'Monitor at institution - SE', 
                                             'Dependent mean variable - coefficient',
-                                            'Dependent mean variable - standard deviation',
+                                            'Dependent mean variable - SE',
                                             'Observations']])
         newtable = pd.DataFrame()
         newtable = pd.DataFrame(index=idx,columns=columns)
@@ -203,9 +242,9 @@ def create_table6(df):
     df['clsize_hat_monitor'] = df['clsize_hat']*df['o_math']
     columns= pd.MultiIndex.from_product([['Math', 'Language'],
                                          ['Italy', 'North/Center', 'South']])
-    idx = [['Class size x Monitor - coefficient','Class size x Monitor - standard error',
-            'Class size x No monitor - coefficient','Class size x No monitor - standard error',
-            'Monitor - coefficient','Monitor - standard error','Observations']]
+    idx = [['Class size x Monitor - coefficient','Class size x Monitor - SE',
+            'Class size x No monitor - coefficient','Class size x No monitor - SE',
+            'Monitor - coefficient','Monitor - SE','Observations']]
     table = pd.DataFrame(index=idx,columns=columns)
     outcomes = ['answers_math_std','answers_ital_std']
     vars_interest = ['clsize_monit','clsize_monit_no','C(o_math)[T.1]']
@@ -246,7 +285,7 @@ def create_table7(df):
         columns= pd.MultiIndex.from_product([['Math', 'Language'],['Italy', 'North/Center', 'South']])
         idx = []
         idx = pd.MultiIndex.from_product([[panels[i]],
-                                          ['Maimonides\' Rule - coefficient','Maimonides\' Rule - standard error','Monitor at institution - coefficient','Monitor at institution - standard error','Observations']])
+                                          ['Maimonides\' Rule - coefficient','Maimonides\' Rule - SE','Monitor at institution - coefficient','Monitor at institution - SE','Observations']])
         newtable = pd.DataFrame()
         newtable = pd.DataFrame(index=idx,columns=columns)
         X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
@@ -293,11 +332,11 @@ def create_table8(df):
         col = 0
         idx = pd.MultiIndex.from_product([[panels[i]],
                                           ['Class size - coefficient', 
-                                            'Class size - standard error', 
+                                            'Class size - SE', 
                                             'Score manipulation - coefficient',
-                                            'Score manipulation - standard error',
+                                            'Score manipulation - SE',
                                             'Class size x Score manipulation - coefficient',
-                                            'Class size x Score manipulation - standard error',
+                                            'Class size x Score manipulation - SE',
                                             'Overid test p-value','Observations']])
         newtable = pd.DataFrame(index=idx,columns=columns)
         X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
@@ -333,4 +372,24 @@ def create_table8(df):
         table = table.append(newtable,ignore_index=False)
         
     return table
+
+def create_table9(df):
+    outcomes = ['ratio_clsize','ratio_sch_enrol','ratio_ins_enrol','female',
+                'immigrants_broad','dad_midedu','mom_employed','m_dad_edu','m_mom_occ','m_origin']
+    idx = [['Percent in class sitting the test - coefficient','Percent in class sitting the test - SE',
+            'Percent in school sitting the test - coefficient','Percent in school sitting the test - SE',
+            'Percent in institution sitting the test - coefficient','Percent in institution sitting the test - SE',
+            'Female students - coefficient','Female students - SE',
+            'Immigrant students - coefficient','Immigrant students - SE',
+            'Father HS - coefficient','Father HS - SE',
+            'Mother employed - coefficient','Mother employed - SE',
+            'Missing data on father\'s education - coefficient','Missing data on father\'s education - SE',
+            'Missing data on mother\'s occupation - coefficient','Missing data on mother\'s occupation - SE',
+            'Missing data on country of origin - coefficient','Missing data on country of origin - SE']]
+    POLY = ' students+ students2  + students*C(segment) + students2*C(segment) + '
+    FIXED = ' C(survey) + C(grade) + enrol_ins_snv*C(region) + C(d) + '
+    CONTROLS = POLY+FIXED
+    var_interest = 'clsize_hat'
+    table = tables_balance(df, outcomes, idx, CONTROLS, var_interest)
     
+    return table    

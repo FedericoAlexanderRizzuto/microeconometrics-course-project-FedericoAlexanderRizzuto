@@ -17,13 +17,13 @@ The current repository contains my replication of [Joshua D. Angrist, Erich Batt
 
 ## Replication Angrist et al. (2017)
 
-Angrist et al. (2017) analyse the effect of smaller classes on student achievement using Italian data on INVALSI test scores of second- and fifth graders. They contribute to the long-standing debate on class-size effects by illustrating how in certain settings characterized by low accountability smaller classes can incentivize teachers to manipulate test scores, thereby inflating estimates of class-size effects. By combining Maimonides-IV estimation, first discussed in Angrist and Lavy (1999), with a randomized monitoring experiment, they credibly conclude that reducing classes by 10 students has no effects on student achievement, at least in the Italian setting.
+Angrist et al. (2017) analyse the effect of smaller classes on student achievement using Italian data on INVALSI test scores of second- and fifth graders. They contribute to the long-standing debate on class-size effects by illustrating how in certain settings, characterized by local marking and low accountability, smaller classes can incentivize teachers to manipulate test scores, thereby inflating estimates of class-size effects. By combining Maimonides-IV estimation, first discussed in Angrist and Lavy (1999), with a randomized monitoring experiment, they credibly conclude that reducing classes by 10 students has no effects on student achievement, at least in the Italian setting.
 
-In this project, I replicate the findings of Agrist et al. (2017) and extend their work by enhanced visualization.
+In this project, I replicate the findings of Agrist et al. (2017) and extend their work by means of enhanced visualization.
 
 ## This Repository
 
-My replication can be found in the Jupyter notebook [student_project.nbconvert.ipynb](https://github.com/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.nbconvert.ipynb). It is best viewed via mybinder nbviewer (see the badge above). 
+My replication can be found in the Jupyter notebook [student_project.nbconvert.ipynb](https://github.com/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.nbconvert.ipynb). It is best viewed via nbviewer (see the badge above). 
 The folders *auxiliary*, *data*, *files* respectively contain auxiliary code (written in Python), the dataset used for my replication, and the causal graph, which may not be rendered in the Jupyter notebook.
 
 ## References
