@@ -284,8 +284,10 @@ def create_table7(df):
         col = 0
         columns= pd.MultiIndex.from_product([['Math', 'Language'],['Italy', 'North/Center', 'South']])
         idx = []
-        idx = pd.MultiIndex.from_product([[panels[i]],
-                                          ['Maimonides\' Rule - coefficient','Maimonides\' Rule - SE','Monitor at institution - coefficient','Monitor at institution - SE','Observations']])
+        idx = pd.MultiIndex.from_product([[panels[i]],['Maimonides\' Rule - coefficient',
+                                                       'Maimonides\' Rule - SE',
+                                                       'Monitor at institution - coefficient',
+                                                       'Monitor at institution - SE','Observations']])
         newtable = pd.DataFrame()
         newtable = pd.DataFrame(index=idx,columns=columns)
         X = ' female+ m_female+ immigrants_broad+ m_origin+ dad_lowedu+ dad_midedu+ dad_highedu+ mom_unemp+ mom_housew+ mom_employed+ m_mom_edu + '
