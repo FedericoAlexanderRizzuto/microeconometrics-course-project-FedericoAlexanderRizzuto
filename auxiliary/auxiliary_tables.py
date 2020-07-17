@@ -205,8 +205,8 @@ def create_table5(df):
         idx = pd.MultiIndex.from_product([[panels[i]],
                                           ['Monitor at institution - coefficient', 
                                             'Monitor at institution - SE', 
-                                            'Dependent mean variable - coefficient',
-                                            'Dependent mean variable - SE',
+                                            'Dependent variable mean',
+                                            'Dependent variable mean',
                                             'Observations']])
         newtable = pd.DataFrame()
         newtable = pd.DataFrame(index=idx,columns=columns)

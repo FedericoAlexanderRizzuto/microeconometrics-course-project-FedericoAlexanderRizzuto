@@ -166,14 +166,14 @@ def create_fig5b(df):
 
 def create_fig6a(df):
     figtitle = 'FIGURE 6a. MATH SCORES MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
     RDgraph(df,'our_CHEAT_math', figtitle, yticks)
     
     return
 
 def create_fig6b(df):
     figtitle = 'FIGURE 6b. LANGUAGE SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
     RDgraph(df,'our_CHEAT_ital', figtitle, yticks)
     
     return
