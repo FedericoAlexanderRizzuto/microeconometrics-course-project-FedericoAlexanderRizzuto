@@ -12,8 +12,14 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from linearmodels import IV2SLS
 
-from auxiliary.auxiliary_regressions import *
-from auxiliary.auxiliary_plots import *
+#import statsmodels.formula.api as smf
+#from linearmodels import IV2SLS
+from linearmodels.iv._utility import annihilate, proj
+from linearmodels.utility import (InvalidTestStatistic, WaldTestStatistic, _ModelComparison,_SummaryStr, _str, pval_format)
+
+
+#from auxiliary.auxiliary_regressions import *
+#from auxiliary.auxiliary_plots import *
 
 def prepare_data(df):
     df['north_center'] = 1
@@ -90,6 +96,28 @@ def create_table1c(df):
     table1c = format_table1(t1c_reg,nins_reg,t1c_it,nins_it)
     
     return table1c
+
+def summ_reg(df,model,formula,cov_type,cov_kwds):
+    if model == smf.ols:
+        result = model(formula,df).fit(cov_type=cov_type, cov_kwds=cov_kwds)
+        se = "{:.3f}".format(result.bse['clsize_ols'])
+    elif model == IV2SLS.from_formula:
+        result = model(formula,df).fit(cov_type='clustered',clusters=df.clu)
+        se = "{:.3f}".format(result.std_errors['clsize_ols'])
+    else:
+        print('Function only for smf.ols and IV2SLS.from_formula')
+    nobs = "{:.0f}".format(result.nobs)
+    coeff = "{:.3f}".format(result.params['clsize_ols'])
+    if 'students' in formula:
+        enr = 'X'
+    if 'students2' in formula:
+        enr2 = 'X'
+    if 'students*C(segment)' in formula:
+        inter = 'X'
+    else:
+        inter = ''
+    return [coeff,(se),enr,enr2,inter,nobs]
+
 
 def create_table2and3(df,outcomes,panels):
     df['clsize_ols'] = df['clsize_snv'] / 10
@@ -314,14 +342,15 @@ def create_table7(df):
 def create_table8(df):
     outcomes = ['math','ital']
     panels = ['Panel A. Math', 'Panel B. Language']
-    df['WEGOEXTRA'] = df['fuzzy2_d2'] - df['fuzzy2_d5']
+    WEGOEXTRA = 'fuzzy2_d2 + fuzzy2_d3 + fuzzy2_d4 + fuzzy2_d5'
     df['clsize_ols'] = df['clsize_snv'] / 10
-    df['inter_instr'] = df['clsize_ols']*df['o_math']
+    #df['inter_instr'] = df['clsize_ols']*df['o_math']
+    df['inter_instr'] = df['clsize_hat']*df['o_math']
     for h, outcome in enumerate(outcomes):
         df['inter_'+outcome] = df['clsize_ols']*df['our_CHEAT_'+outcome]
     for l in range(2,6):
         df['inter_instr_over'+str(l)] = df['o_math']*df['fuzzy2_d'+str(l)]
-    df['WEGOEXTRA_INTER'] = df['inter_instr_over2']-df['inter_instr_over5']
+    WEGOEXTRA_INTER = '+ inter_instr_over2 + inter_instr_over3 + inter_instr_over4 + inter_instr_over5'
     df_nc = df.loc[df.north_center == 1]
     df_nc.region = df_nc.region.cat.remove_unused_categories()
     df_s = df.loc[df.north_center == 2]
@@ -345,8 +374,8 @@ def create_table8(df):
         POLY = ' students+ students2  + students*C(segment) + students2*C(segment) + '
         FIXED = ' C(survey) + C(grade) + enrol_ins_snv*C(region) + C(d) + '
         formula1 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' ~ clsize_hat + o_math]' 
-        formula2 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' ~ clsize_hat + o_math + WEGOEXTRA]' 
-        formula3 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' + inter_'+outcome+' ~ clsize_hat + o_math + inter_instr + WEGOEXTRA]' 
+        formula2 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' ~ clsize_hat + o_math +'+ WEGOEXTRA+']' 
+        formula3 = 'answers_'+outcome+'_std ~'+X+FIXED+POLY+' [clsize_ols + our_CHEAT_'+outcome+' + inter_'+outcome+' ~ clsize_hat + o_math + inter_instr +'+ WEGOEXTRA + WEGOEXTRA_INTER + ']' 
         formulas = [formula1,formula2,formula3]
         vars_interest = ['clsize_ols','our_CHEAT_'+outcome,'inter_'+outcome]
         for j, formula in enumerate(formulas):
@@ -355,8 +384,8 @@ def create_table8(df):
                 data = data[data['our_CHEAT_'+outcome].notna()]
                 result = IV2SLS.from_formula(formula,data).fit(cov_type='clustered',clusters=data.clu)
                 for k in range(max(2,j+1)):
-                    results_interest.append("{:.3f}".format(result.params[vars_interest[k]]))
-                    results_interest.append("{:.3f}".format(result.std_errors[vars_interest[k]]))
+                    results_interest.append("{:.4f}".format(result.params[vars_interest[k]]))
+                    results_interest.append("{:.4f}".format(result.std_errors[vars_interest[k]]))
                 if j == 0:
                     results_interest.append('')
                     results_interest.append('')

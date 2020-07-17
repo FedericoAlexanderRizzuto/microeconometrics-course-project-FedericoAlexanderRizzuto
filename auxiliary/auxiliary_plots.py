@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(style="white", color_codes=True)
 import statsmodels.formula.api as smf
 
-from auxiliary.auxiliary_tables import *
-from auxiliary.auxiliary_regressions import *
+#from auxiliary.auxiliary_tables import *
+#from auxiliary.auxiliary_regressions import *
 
 plt.style.use('seaborn')
 
