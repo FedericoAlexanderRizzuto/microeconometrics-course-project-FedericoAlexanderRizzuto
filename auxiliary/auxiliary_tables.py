@@ -1,33 +1,38 @@
 # -*- coding: utf-8 -*-
 """
-Date: July 17, 2020
+Date: July 18, 2020
 Author: Federico Alexander Rizzuto
 Content: Code producing tables needed to replicate Angrist et al. (2017) for the 
-Microeconometrics project
+Microeconometrics project at the University of Bonn
 """
 
 import numpy as np
 import pandas as pd
-#import statsmodels as sm
 import statsmodels.formula.api as smf
 from linearmodels import IV2SLS
 
-#import statsmodels.formula.api as smf
-#from linearmodels import IV2SLS
-from linearmodels.iv._utility import annihilate, proj
-from linearmodels.utility import (InvalidTestStatistic, WaldTestStatistic, _ModelComparison,_SummaryStr, _str, pval_format)
-
-
-#from auxiliary.auxiliary_regressions import *
-#from auxiliary.auxiliary_plots import *
 
 def prepare_data(df):
-    df['north_center'] = 1
-    df.loc[df.south == 1, 'north_center'] = 2
+    df['north_center'] = 1 # create new dummy north_center 
+    df.loc[df.south == 1, 'north_center'] = 2 
+    # Northern and Central Italy = 1, Southern Italy = 2
     
     return df
 
 def prepare_data_table1(df):
+    """
+    to be used in create_table1a, create_table1b and create_table1c
+    create placeholder var for Italy 
+    consider observations only if corresponding nonresponse indicator is zero
+    Args:
+    -------
+        df: main data frame
+    Returns:
+    -------
+        var_cl: list of vars to summarize at the class level
+        var_sch: list vars to summarize at the school level
+        var_ins: list of vars to summarize at the institution level
+    """
     df['placeholder'] = 0
     var_cl = df[['grade','north_center','classid','m_female','m_origin',
                         'm_dad_edu','m_mom_occ','female','immigrants_broad',
@@ -47,6 +52,18 @@ def prepare_data_table1(df):
     return var_cl, var_sch, var_ins
 
 def format_table1(reg,nreg,it,nit):
+    """
+    Args:
+    -------
+        reg: df with regional stats (means and std)
+        nreg: df with regional stats (number of obserations)
+        it: df with stats for the whole country (means and std)
+        nit: df with stats for the whole country (number of obserations)
+    
+    Returns:
+    -------
+        table: df resulting from the concatenated and formatted arguments
+    """
     table_reg = pd.concat([reg,nreg], axis=1, sort=False)
     table_it = pd.concat([it,nit], axis=1, sort= False)
     table = pd.concat([table_reg,table_it], axis = 0, sort = False)
@@ -66,6 +83,14 @@ def format_table1(reg,nreg,it,nit):
     return table
     
 def create_table1a(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table1a: data frame representing table 1a
+    """
     var_cl, var_sch, var_ins = prepare_data_table1(df)
     grouped = ['female','immigrants_broad','dad_midedu','mom_employed','answers_math_pct',
             'answers_ital_pct','clsize_snv','our_CHEAT_math','our_CHEAT_ital']
@@ -78,6 +103,14 @@ def create_table1a(df):
     return table1a
 
 def create_table1b(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table1a: data frame representing table 1b
+    """
     var_cl, var_sch, var_ins = prepare_data_table1(df)
     t1b_reg = var_sch.groupby(['grade','north_center'])[['classid','enrol_sch_snv']].agg(['mean','std'])
     nsch_reg = var_sch.groupby(['grade','north_center'])[['schoolid']].agg(['count'])
@@ -88,6 +121,14 @@ def create_table1b(df):
     return table1b
    
 def create_table1c(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table1a: data frame representing table 1c
+    """
     var_cl, var_sch, var_ins = prepare_data_table1(df)
     t1c_reg = var_ins.groupby(['grade','north_center'])[['schoolid','classid','enrol_ins_snv','o_math']].agg(['mean','std'])
     nins_reg = var_ins.groupby(['grade','north_center'])[['schoolid']].agg(['count'])
@@ -97,9 +138,27 @@ def create_table1c(df):
     
     return table1c
 
-def summ_reg(df,model,formula,cov_type,cov_kwds):
+def summ_reg(df,model,formula):
+    """
+    used in create_table2and3 to perform OLS or IV estimation for Table 2 and Table 3
+    Args: 
+    -------
+        df: main data frame
+        model: muste either be smf.ols or IV2SLS.from_formula
+        formula: regression equation
+        
+    Returns:
+        
+    -------
+        coeff: coefficient estimate on class size / 10, i.e. clsize_ols
+        (se): standard error for coeff
+        enr: X when enrollment is included (always)
+        enr2: X when enrollment squared is included (always)
+        inter: X when the interaction terms included (columns 7 to 9)
+        nobs: number of observations in each regression
+    """
     if model == smf.ols:
-        result = model(formula,df).fit(cov_type=cov_type, cov_kwds=cov_kwds)
+        result = model(formula,df).fit(cov_type='cluster', cov_kwds={'groups': df['clu']})
         se = "{:.3f}".format(result.bse['clsize_ols'])
     elif model == IV2SLS.from_formula:
         result = model(formula,df).fit(cov_type='clustered',clusters=df.clu)
@@ -116,10 +175,20 @@ def summ_reg(df,model,formula,cov_type,cov_kwds):
         inter = 'X'
     else:
         inter = ''
+
     return [coeff,(se),enr,enr2,inter,nobs]
 
-
 def create_table2and3(df,outcomes,panels):
+    """
+    Args: 
+    -------
+        df: main data frame
+        outcomes: list of outcome vars (test scores in Table 2, manipulation in Table 3)
+        panels: names of panels for multiindex
+    Returns:
+    -------
+        table1a: data frame representing Table 2 or Table 3
+    """
     df['clsize_ols'] = df['clsize_snv'] / 10
     df_nc = df.loc[df.north_center == 1]
     df_nc.region = df_nc.region.cat.remove_unused_categories()
@@ -146,9 +215,7 @@ def create_table2and3(df,outcomes,panels):
         for j, formula in enumerate(formulas):
             for k, data in enumerate(datasets):
                 data = data[data[outcome].notna()]
-                cov_type = 'cluster'
-                cov_kwds = {'groups': data['clu']}
-                reg_res = summ_reg(data, model[j], formula, cov_type, cov_kwds)
+                reg_res = summ_reg(data, model[j], formula)
                 this_column = newtable.columns[clmn]
                 newtable[this_column] = reg_res
                 clmn = clmn + 1
@@ -157,14 +224,23 @@ def create_table2and3(df,outcomes,panels):
     return table
 
 def create_table4a(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame representing the first part of Table 4, which contains
+        means and standard deviations of various administrative, demographic and
+        nonresponse variables
+    """
     df['placeholder'] = 0
     table = pd.DataFrame()
     vars_stats = {'clsize_snv':['mean', 'std'],'enrol_sch_snv':['mean', 'std'],'ratio_clsize':['mean', 'std'],
                           'ratio_sch_enrol' :['mean', 'std'],'ratio_ins_enrol':['mean', 'std'],'female':['mean', 'std'],'immigrants_broad':['mean', 'std'],
                           'dad_midedu':['mean', 'std'],'mom_employed':['mean', 'std'],'m_dad_edu':['mean', 'std'],'m_mom_occ':['mean', 'std'],'m_origin':['mean', 'std'],'classid': ['count']}
-    table = df.groupby(['placeholder','o_math']).agg(vars_stats).round(2)
-    table = table.append(df.groupby(['north_center','o_math']).agg(vars_stats).round(2),ignore_index=False,sort=False)
-    tablebo = df.groupby(['placeholder','o_math'])[['classid']].count()
+    table = df.groupby(['placeholder','o_math']).agg(vars_stats).round(3)
+    table = table.append(df.groupby(['north_center','o_math']).agg(vars_stats).round(3),ignore_index=False,sort=False)
     table = table.transpose()
     table.columns.set_levels([['Italy', 'North/Center','South'],['No Monitor', 'Monitor']],inplace=True)
     table.rename(index={'clsize_snv':'Class size','enrol_sch_snv':'Grade enrollment at school','ratio_clsize':'Percent in class sitting the test',
@@ -176,6 +252,21 @@ def create_table4a(df):
     return table
 
 def tables_balance(df,outcomes,idx,CONTROLS,var_interest):
+    """
+    used in create_table4b and create_table9 to create covariate balance tables
+    
+    Args: 
+    -------
+        df: main data frame
+        outcomes: list of covariates to use as dependent variables in the regressions
+        idx: names for table indices
+        CONTROLS: list of variables to condition on in the regressions
+        vars_interest: explanatory variable for which to store the coefficient
+        estimate and its standard error (monitoring in Table 4, Maimonides Rule in Table 9)
+    Returns:
+    -------
+        table: data frame representing the covariate balance table 
+    """
     df['clsize_ols'] = df['clsize_snv']/10
     df_nc = df.loc[df.north_center == 1]
     df_nc.region = df_nc.region.cat.remove_unused_categories()
@@ -197,6 +288,14 @@ def tables_balance(df,outcomes,idx,CONTROLS,var_interest):
     return table
 
 def create_table4b(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame created by tables_balance representing Table 4
+    """
     idx = [['Class size - coefficient','Class size - SE','Grade enrollment at school - coefficient','Grade enrollment at school - SE',
             'Percent in class sitting the test - coefficient','Percent in class sitting the test - SE',
             'Percent in school sitting the test - coefficient','Percent in school sitting the test - SE',
@@ -217,6 +316,18 @@ def create_table4b(df):
     return table
 
 def create_table5(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame representing Table 5 and containing estimate and 
+        standard error of the coefficient on the monitor dummy from a regression of
+        score manipulation and test scores on monitoring and the usual controls, 
+        as well as the mean and the standard deviation of the dependent variable
+        (score manipulation and test score) plus number of observations
+    """
     panels = ['Panel A. Math', 'Panel B. Language']
     columns= pd.MultiIndex.from_product([['Score manipulation', 'Test scores'],
                                           ['Italy', 'North/Center', 'South']])
@@ -261,6 +372,17 @@ def create_table5(df):
 
     
 def create_table6(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame representing Table 6 and containing estimates and
+        their standard error of coefficients on the monitoring dummy and on 
+        interaction terms of class size and the mentioned dummy from a regression
+        of math and language test scores on these variables and the usual controls
+    """
     df['clsize_ols'] = df['clsize_snv']/10
     df['clsize_monit_no'] = np.nan
     df['clsize_monit_no'] = df['clsize_ols']*(1-df['o_math'])
@@ -298,6 +420,16 @@ def create_table6(df):
     return table
 
 def create_table7(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame representing Table 7 and containing coefficient estimates
+        and their standard error of the two endogenous variables from regressing
+        manipulation and class size  on these variables and on the usual controls
+    """
     panels = ['Panel A. Score manipulation', 'Panel B. Class size']
     end_vars = [['our_CHEAT_math','our_CHEAT_ital'],['clsize_ols']]
     df['clsize_ols'] = df['clsize_snv'] / 10
@@ -340,6 +472,16 @@ def create_table7(df):
     return table
 
 def create_table8(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame representing Table 8 and containing coefficient estimates
+        and their standard error of class size, manipulation and their interaction
+        from regressing test scores on them and on the usual controls
+    """
     outcomes = ['math','ital']
     panels = ['Panel A. Math', 'Panel B. Language']
     WEGOEXTRA = 'fuzzy2_d2 + fuzzy2_d3 + fuzzy2_d4 + fuzzy2_d5'
@@ -404,6 +546,14 @@ def create_table8(df):
     return table
 
 def create_table9(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        table: data frame created by tables_balance representing Table 9
+    """
     outcomes = ['ratio_clsize','ratio_sch_enrol','ratio_ins_enrol','female',
                 'immigrants_broad','dad_midedu','mom_employed','m_dad_edu','m_mom_occ','m_origin']
     idx = [['Percent in class sitting the test - coefficient','Percent in class sitting the test - SE',

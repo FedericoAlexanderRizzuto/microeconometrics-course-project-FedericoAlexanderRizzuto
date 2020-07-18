@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Date: July 17, 2020
+Date: July 18, 2020
 Author: Federico Alexander Rizzuto
-Content: Code producing tables needed to replicate Angrist et al. (2017) for the 
-Microeconometrics project
+Content: Code producing plots needed to replicate Angrist et al. (2017) for the 
+Microeconometrics project at the University of Bonn
 """
 
 import pandas as pd
@@ -12,12 +12,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(style="white", color_codes=True)
 import statsmodels.formula.api as smf
 
-#from auxiliary.auxiliary_tables import *
-#from auxiliary.auxiliary_regressions import *
-
 plt.style.use('seaborn')
 
+
 def plot_count_classes(df):
+    """
+    produces Figure E2, i.e. the count plot of classes by grade, region and year
+    """
     g = sns.catplot(x = 'survey', hue='grade',hue_order=[1,0],col='area',kind="count",data=df,palette='tab20c',legend=False)
     axes = g.axes.flatten()
     axes[0].set_title('North')
@@ -30,6 +31,21 @@ def plot_count_classes(df):
     plt.show()
    
 def plot_dist(df,var2plot,figtitle,xlim,ylim,xlabel):
+    """
+    used in plot_score_dist and plot_demo_dist to produce Figures E3 and E4
+    
+    Args: 
+    -------
+        df: main data frame
+        var2plot: list of vars to plot
+        figtitle: title for every variable, i.e. for each row
+        xlim: limits of x-axis
+        ylim: limits of y-axis
+        xlabel: label for alls x-axis
+    Returns:
+    -------
+        FacetGrid plot
+    """
     for i in range(len(var2plot)):
         g = sns.FacetGrid(df,hue='area',col='grade',col_order=[1,0],margin_titles=True)
         g.map(sns.distplot,var2plot[i]).fig.set_size_inches(10,6)
@@ -46,6 +62,16 @@ def plot_dist(df,var2plot,figtitle,xlim,ylim,xlabel):
     return
 
 def plot_score_dist(df):
+    """
+    produces Figures E3 (FacetGrid with distplots of test scores)
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        FacetGrid plot
+    """
     var2plot = ['answers_math_pct','answers_ital_pct']
     figtitle = ['Test scores in math','Test scores in Italian language']
     xlim = [0,100]
@@ -56,16 +82,37 @@ def plot_score_dist(df):
     return
     
 def plot_demo_dist(df,xlim,ylim):
+    """
+    produces Figures E4 (FacetGrid with distplots of immigrant students,
+    students with fathers HS graduates and students with employed mothers)
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        FacetGrid plot
+    """
     var2plot = ['immigrants_broad','dad_midedu','mom_employed']
     figtitle = ['Immigrant students','Father HS graduate','Mother employed']
-    #xlim = [0.1,1]
-    #ylim = [0,6]
     xlabel = 'Pct student'
     plot_dist(df, var2plot, figtitle, xlim, ylim, xlabel)
     
     return
 
 def prepare_data_fig2and3(df):
+    """
+    used in create_fig2 and create_fig3 to limit the observations to enrollment
+    under 150 and to group class size and predicted class size by grade and
+    enrollment
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        grouped: grouped data frame
+    """
     grouped = df[['grade','students','d','clsize_snv','clsize_hat']]
     grouped = grouped[grouped['students']<=150]
     grouped = grouped.groupby(['grade','students','d'],as_index=False)[['clsize_snv','clsize_hat']].mean()
@@ -73,6 +120,16 @@ def prepare_data_fig2and3(df):
     return grouped
 
 def create_fig2(df):
+    """
+    produces Figure 2
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        plot of Maimonides Rule
+    """
     grouped = prepare_data_fig2and3(df)
     fig, (ax1,ax2) = plt.subplots(2,1,sharex='col', sharey=True,figsize=(8,8))
     plt.ylim(10,30)
@@ -88,7 +145,6 @@ def create_fig2(df):
     ax2.title.set_position([0.1, 1])
     fig.text(0.5, 0.0, 'FIGURE 2. CLASS SIZE BY ENROLLMENT IN PRE-REFORM YEARS', ha='center', va='center')
     ax2.set(xlabel="Enrollment",ylabel='Class size')
-    #l = plt.legend()
     l1 = ax1.legend(bbox_to_anchor=[-0.01,0,1,0.27])
     l1.get_texts()[0].set_text('Actual classes')
     l1.get_texts()[1].set_text('Maimonides\' Rule')
@@ -100,6 +156,16 @@ def create_fig2(df):
     return
 
 def create_fig3(df):
+    """
+    produces Figure 3
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        plot of Maimonides Rule
+    """
     grouped = prepare_data_fig2and3(df)
     fig = plt.figure(figsize=(8,4))
     fig.suptitle('Grade 2',fontsize=12,x=0.14,y=1)
@@ -118,6 +184,16 @@ def create_fig3(df):
     return
 
 def cutoffs_center(df):
+    """
+    used to create RD graphs
+    
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        df['dev']: new variable of deviation from centered cutoff
+    """
     df['dev'] = np.nan
     cutoffs = [[25,50,75,100,125],[27,54,81,108,135]]
     regimes = ['All remaining grades/years','Grade 2 from 2010']
@@ -128,9 +204,18 @@ def cutoffs_center(df):
             df['dev'] = np.where(condition,df['students']-int(cutoff),df['dev'])
             
     return df['dev']
-
     
 def onesided_MAs(grouped_data,variable):
+    """
+    used to create RD graphs
+    
+    Args: 
+    -------
+        grouped_data: data frame of data grouped by grade, north_center and dev
+    Returns:
+    -------
+        grouped_data['MA']: variable of one-sided 3-point moving average
+    """
     grouped_data['MA'] = np.nan
     intervals = [[-12,-2],[2,12]]
     for i in range(1,3):
@@ -142,43 +227,20 @@ def onesided_MAs(grouped_data,variable):
             
     return grouped_data['MA']
 
-
-def create_fig4(df):
-    figtitle = 'FIGURE 4. CLASS SIZE AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-5,-3,-1,1,3,5]
-    RDgraph(df, 'clsize_snv', figtitle, yticks)
-    
-    return
-
-def create_fig5a(df):
-    figtitle = 'FIGURE 5a. MATH TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
-    RDgraph(df,'answers_math_std', figtitle, yticks)
-    
-    return
-
-def create_fig5b(df):
-    figtitle = 'FIGURE 5b. LANGUAGE TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
-    RDgraph(df,'answers_ital_std', figtitle, yticks)
-    
-    return
-
-def create_fig6a(df):
-    figtitle = 'FIGURE 6a. MATH SCORES MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
-    RDgraph(df,'our_CHEAT_math', figtitle, yticks)
-    
-    return
-
-def create_fig6b(df):
-    figtitle = 'FIGURE 6b. LANGUAGE SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
-    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
-    RDgraph(df,'our_CHEAT_ital', figtitle, yticks)
-    
-    return
-
 def RDgraph(df,outcome,figtitle,yticks):
+    """
+    used in create_fig4 to create_fig6b to create RD grpahs
+    
+    Args: 
+    -------
+        df: main data frame
+        outcome: variable to regress on controls and to plot in the RD graph
+        figtitle: figure title
+        yticks: ticks of the y-axis
+    Returns:
+    -------
+        RD graph, by grade and by region (i.e. 2 rows, 2 columns)
+    """
     df['dev'] = cutoffs_center(df)
     subset = pd.DataFrame()
     subset = df[['female', 'm_female', 'immigrants_broad','m_origin', 'dad_lowedu',
@@ -216,9 +278,90 @@ def RDgraph(df,outcome,figtitle,yticks):
     
     return
 
+def create_fig4(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure 4
+    """
+    figtitle = 'FIGURE 4. CLASS SIZE AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-5,-3,-1,1,3,5]
+    RDgraph(df, 'clsize_snv', figtitle, yticks)
+    
+    return
 
+def create_fig5a(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure 5a
+    """
+    figtitle = 'FIGURE 5a. MATH TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'answers_math_std', figtitle, yticks)
+    
+    return
+
+def create_fig5b(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure 5b
+    """
+    figtitle = 'FIGURE 5b. LANGUAGE TEST SCORES AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.16,-0.12,-0.08,-0.04,0,0.04,0.08,0.12,0.16]
+    RDgraph(df,'answers_ital_std', figtitle, yticks)
+    
+    return
+
+def create_fig6a(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure 6a
+    """
+    figtitle = 'FIGURE 6a. MATH SCORES MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
+    RDgraph(df,'our_CHEAT_math', figtitle, yticks)
+    
+    return
+
+def create_fig6b(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure 6b
+    """
+    figtitle = 'FIGURE 6b. LANGUAGE SCORE MANIPULATION AND ENROLLMENT, CENTERED AT MAIMONIDES\' CUTOFFS'
+    yticks = [-0.06,-0.04,-0.02,0,0.02,0.04,0.06]
+    RDgraph(df,'our_CHEAT_ital', figtitle, yticks)
+    
+    return
 
 def plot_monitor_demodata(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure E5 (violin plot of demographic data distribution by monitoring status)
+    """
     subject = ['dad_midedu','mom_employed','immigrants_broad']
     subject_ylabel = ['Pct students with father HS graduate',
                       'Pct students with mother employed','Pct immigrant students']
@@ -251,6 +394,14 @@ def plot_monitor_demodata(df):
     return
 
 def plot_monitor_testscores(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure E6 (violin plot of monitoring effect on test scores)
+    """
     subject = ['answers_math_pct','answers_math_pct','answers_ital_pct',
                'answers_ital_pct']
     subject_ylabel = ['Pct correct answers in math','Pct correct answers in math',
@@ -284,6 +435,15 @@ def plot_monitor_testscores(df):
     return
 
 def plot_sorting(df):
+    """
+    Args: 
+    -------
+        df: main data frame
+    Returns:
+    -------
+        Figure E7 (simple RD graph for controls and the corresponding nonresponse
+        indicator)
+    """
     df['dev'] = cutoffs_center(df)
     df_south = df[df.north_center ==1]
     cols = df_south[['female','m_female','immigrants_broad','m_origin','dad_midedu','m_dad_edu','mom_employed','m_mom_occ']]
@@ -304,8 +464,6 @@ def plot_sorting(df):
         ax.axvline(color='r')
         ax.xaxis.set_ticks(np.arange(-12,15,3))
         ax.yaxis.set_ticks(np.arange(round(groupp['mycolumn'].mean(),2)-0.05, round(groupp['mycolumn'].mean(),2)+0.05, 0.01))
-        #plt.yticks(np.arange(min(groupp['mycolumn']), max(groupp['mycolumn']), .1))
-        #sns.set(style="ticks")
     plt.tight_layout()
     fig.set_size_inches(14,8)
     plt.show()
