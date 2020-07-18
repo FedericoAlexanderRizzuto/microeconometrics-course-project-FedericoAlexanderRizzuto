@@ -1,6 +1,6 @@
 # Microeconometrics Project: Replication of Angrist et al. (2017)
 
-<a href="https://nbviewer.jupyter.org/github/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.nbconvert.ipynb?flush_cache=true"
+<a href="https://nbviewer.jupyter.org/github/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto/blob/master/student_project.ipynb?flush_cache=true"
    target="_parent">
    <img align="center"
   src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png"
