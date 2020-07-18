@@ -282,3 +282,32 @@ def plot_monitor_testscores(df):
         plt.show()
         
     return
+
+def plot_sorting(df):
+    df['dev'] = cutoffs_center(df)
+    df_south = df[df.north_center ==1]
+    cols = df_south[['female','m_female','immigrants_broad','m_origin','dad_midedu','m_dad_edu','mom_employed','m_mom_occ']]
+    titles = ['Female','Female - Missing','Immigrant','Immigrant - Missing','Father HS','Father HS - Missing','Mother Employed','Mother Employed - Missing']
+    Tot = int(len(cols.columns))
+    Rows = 2
+    Cols = int(Tot/Rows)
+    Position = range(1,Tot + 1)    
+    fig = plt.figure(1)
+    for k in range(Tot):
+        df_south['mycolumn'] = cols.iloc[:,k]
+        groupp = df_south.groupby(['dev'],as_index=False)['mycolumn'].mean()
+        ax = fig.add_subplot(Rows,Cols,Position[k])
+        sns.scatterplot(x='dev', y='mycolumn', data=groupp, palette='pastel',color='c')
+        ax.set_ylabel('')
+        ax.set_xlabel('Enrollment')
+        ax.set_title(titles[k])
+        ax.axvline(color='r')
+        ax.xaxis.set_ticks(np.arange(-12,15,3))
+        ax.yaxis.set_ticks(np.arange(round(groupp['mycolumn'].mean(),2)-0.05, round(groupp['mycolumn'].mean(),2)+0.05, 0.01))
+        #plt.yticks(np.arange(min(groupp['mycolumn']), max(groupp['mycolumn']), .1))
+        #sns.set(style="ticks")
+    plt.tight_layout()
+    fig.set_size_inches(14,8)
+    plt.show()
+
+    return

@@ -344,7 +344,6 @@ def create_table8(df):
     panels = ['Panel A. Math', 'Panel B. Language']
     WEGOEXTRA = 'fuzzy2_d2 + fuzzy2_d3 + fuzzy2_d4 + fuzzy2_d5'
     df['clsize_ols'] = df['clsize_snv'] / 10
-    #df['inter_instr'] = df['clsize_ols']*df['o_math']
     df['inter_instr'] = df['clsize_hat']*df['o_math']
     for h, outcome in enumerate(outcomes):
         df['inter_'+outcome] = df['clsize_ols']*df['our_CHEAT_'+outcome]
