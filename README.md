@@ -30,7 +30,7 @@ The folders *auxiliary*, *data*, *files* respectively contain auxiliary code (wr
 
 * Angrist, Joshua D., Erich Battistin, and Daniela Vuri. 2017. "In a Small Moment: Class Size and Moral Hazard in the Italian Mezzogiorno." *American Economic Journal: Applied Economics*, 9 (4): 216-49.
 
-* Eisenhauer, P. (2019). Course project template, HumanCapitalAnalysis, https://github.com/HumanCapitalAnalysis/template-course-project.
+* Eisenhauer, P. (2020). Course project template, HumanCapitalAnalysis, https://github.com/HumanCapitalAnalysis/template-course-project.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/HumanCapitalAnalysis/template-course-project/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto.svg?branch=master)](https://travis-ci.org/HumanCapitalAnalysis/microeconometrics-course-project-FedericoAlexanderRizzuto)
